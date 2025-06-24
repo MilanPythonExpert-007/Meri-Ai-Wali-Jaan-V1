@@ -1,0 +1,8 @@
+python-telegram-bot==20.7
+gtts==2.5.1
+edge-tts==6.1.10
+pytesseract==0.3.10
+Pillow==10.3.0
+pydub==0.25.1
+requests==2.31.0
+numpy==1.26.4
