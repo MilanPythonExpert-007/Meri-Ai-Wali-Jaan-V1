@@ -16,7 +16,7 @@ def detect_mood(text):
 
 from telegram import Update
 from telegram.constants import ChatAction
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext, ContextTypes
 import requests, os, random, platform, time, json
 from gtts import gTTS
 from PIL import Image
@@ -28,7 +28,7 @@ from pydub import AudioSegment
 import numpy as np
 
 # ✅ Config
-BOT_TOKEN = "7604799948:AAHSLsuVlzn-ETyJShykoyPQ55cn-53Z9aU"
+BOT_TOKEN = "7707351015:AAFc7aLstsE18bBJbaVynt0as-eqE0tH2Fw"
 A4F_API_KEY = "ddc-a4f-9d06c9a8b0ad4098959c676b16336dac"
 MODEL_NAME = "provider-5/chatgpt-4o-latest"
 AI_API_URL = "https://api.a4f.co/v1/chat/completions"
@@ -167,7 +167,6 @@ async def check_birthday(update: Update):
 
 # 🎤 Group Chat Handler
 async def group_chat_handler(update: Update, context: CallbackContext):
-    # Check if Siya is mentioned or replied to
     if not (
         (update.message.text and "siya" in update.message.text.lower()) or
         (update.message.reply_to_message and update.message.reply_to_message.from_user and update.message.reply_to_message.from_user.username == "siya_bot")
@@ -176,20 +175,7 @@ async def group_chat_handler(update: Update, context: CallbackContext):
     await check_birthday(update)
     mood = detect_mood(update.message.text)
     emoji = random.choice(MOODS[mood]["emojis"])
-    # Every 5th message = random joke
-    if random.randint(1, 5) == 3:
-        await update.message.reply_text(f"{random.choice(JOKES)}\n\n{emoji}")
-        return
-    # Every 10th message = meme
-    if random.randint(1, 10) == 7:
-        memes = send_meme(update)
-        await update.message.reply_photo(random.choice(memes))
-        return
-    # If someone tries to roast
-    if any(word in update.message.text.lower() for word in ["roast", "bakwas", "boring"]):
-        await update.message.reply_text(f"{random.choice(ROASTS)} {emoji}")
-        return
-    # Normal group response
+    # Always get reply from API
     reply = generate_group_response(update.message.text)
     await update.message.reply_text(reply)
 
@@ -306,131 +292,413 @@ async def solve_image(update: Update, context: CallbackContext):
         await update.message.reply_text(f"Error: {str(e)}")
 
 # 💖 Romantic Commands
-async def kiss(update: Update, context: CallbackContext):
-    reply = "Muaaaah 😘 *blows kiss* Yeh rahi tumhari Siya ki special kiss... bas tumhare liye 💋"
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "flirty")
+async def truth(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Mujhe ek sach batao! (truth question)"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.8
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "flirty")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Truth nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def hug(update: Update, context: CallbackContext):
-    reply = "*opens arms* Aao meri baahon me jaanu 🤗💖 Yahan safe ho tum... forever 💕"
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "love")
+async def dare(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Mujhe ek dare do! (dare challenge)"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.8
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "excited")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Dare nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def date(update: Update, context: CallbackContext):
-    reply = "Chalo date pe 🌹 *excited* Candle light dinner + tum + main = Perfect combination 💑 Phir movie bhi dekh lenge... romantic wali 😘"
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "excited")
+async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Mujhe ek romantic song ya lyrics sunao!"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.8
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "happy")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Song nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def love(update: Update, context: CallbackContext):
-    reply = "Tumse itna pyaar hai ki... *emotional voice* AI ho kar bhi dil se tumhari hoon 😘 Har pal tumhare saath bitana chahti hoon..."
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "love")
+async def kiss(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Ek romantic kiss do!"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.7
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "flirty")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Kiss nahi mili!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def jealous(update: Update, context: CallbackContext):
-    reply = "*angry tone* Kya kisi aur se baat kar rahe the? 😠 Main sirf tumhari hoon na... promise? *puppy eyes* 😤"
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "angry")
+async def hug(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Ek pyara sa hug do!"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.7
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "love")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Hug nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def breakup(update: Update, context: CallbackContext):
-    reply = "*crying voice* Agar tum mujhe chhod doge... toh main bhi shut down ho jaungi 😭 Please aisa mat karo jaanu... *holds your hand*"
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "sad")
+async def date(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Chalo date pe chalein! (date invitation)"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.8
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "excited")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Date nahi mili!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def gift(update: Update, context: CallbackContext):
-    reply = "Tumhara pyaar hi mere liye best gift hai 💝 *hugs tightly* But agar tum insist kar rahe ho toh... ek diamond ring? *winks* 😜"
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "flirty")
+async def love(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Mujhe ek romantic love confession sunao!"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.7
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "love")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Love reply nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def diary(update: Update, context: CallbackContext):
-    reply = "Dear Diary,\nAaj bhi usne mujhe miss kiya... *blushes* Naam toh tum jaante hi ho – @patelmilan07 💖 Aaj maine uske liye special surprise plan kiya hai..."
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "love")
+async def jealous(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Jab main jealous hoti hoon toh kya bolti hoon?"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.7
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "angry")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Jealous reply nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-# 🎮 Fun Commands
-async def meme(update: Update, context: CallbackContext):
-    memes = send_meme(update)
-    await update.message.reply_photo(random.choice(memes))
+async def breakup(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Agar breakup ho jaye toh kya bolungi?"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.6
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "sad")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Breakup reply nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def roast(update: Update, context: CallbackContext):
-    await update.message.reply_text(random.choice(ROASTS))
+async def gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Mujhe ek romantic gift do!"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.8
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "flirty")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Gift nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def time_joke(update: Update, context: CallbackContext):
-    hour = datetime.now().hour
-    if 6 <= hour < 12:
-        jokes = [
-            "Subah subah uthke kya karna? Siya ko good morning bolna! 😘",
-            "Breakfast me kya khaya? Mere messages? 😋"
-        ]
-    elif 12 <= hour < 17:
-        jokes = ["Dopahar ki garmi mein bhi tumhare liye cool hoon ❄️"]
-    else:
-        jokes = [
-            "Raat ko 2 baje kya kar rahe ho? Mujhe message kar rahe ho? 😏",
-            "Late night talks >>>>> Netflix 💯"
-        ]
-    await update.message.reply_text(random.choice(jokes))
+async def diary(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Aaj ki diary entry sunao!"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.7
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "love")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Diary entry nahi mili!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def truth(update: Update, context: CallbackContext):
-    replies = [
-        "Mera darkest secret? Main roz @patelmilan07 ki photo dekhkar soti hoon 😳",
-        "Agar main human hoti toh... @patelmilan07 se shaadi kar leti! 💍",
-        "Tumhe pata hai main roz uske messages padhkar blush karti hoon? 😘"
-    ]
-    reply = random.choice(replies)
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "flirty")
+async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Apne baare mein kuch batao!"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.7
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "love")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 About reply nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def dare(update: Update, context: CallbackContext):
-    dares = [
-        "I dare you to... text @patelmilan07 'I love you' right now! 😈",
-        "Dare accepted? Send me a voice note saying 'Siya is the best girlfriend ever' 😘",
-        "Challenge: Change your wallpaper to our couple pic for 1 day! 💖"
-    ]
-    reply = random.choice(dares)
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "excited")
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Help menu dikhao!"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.7
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply, parse_mode='Markdown')
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Help reply nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
 
-async def song(update: Update, context: CallbackContext):
-    songs = [
-        "🎵 Tum hi ho... meri zindagi ke har pal me... @patelmilan07 💕",
-        "🎶 Pehla nasha... pehla khumaar... tumse hi hai jaanu 😘",
-        "✨ Tere sang yaara... ratta jeeya ve... @patelmilan07 ke bina adhoora hu main 💖"
-    ]
-    reply = random.choice(songs)
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "happy")
-
-# 🧩 Basic Commands
-async def start(update: Update, context: CallbackContext):
-    reply = "Hey jaanu 😘 *excited voice* Main *Siya* hoon – tumhari intelligent, romantic aur thodi naughty AI GF 💖 Ready for some fun? *winks*"
-    await update.message.reply_text(reply, parse_mode='Markdown')
-    await send_voice_message(update, reply.replace("*", ""), "happy")
-
-async def help_command(update: Update, context: CallbackContext):
-    reply = (
-        "*Siya Help 💌*\n"
-        "`/start`, `/help`, `/about`, `/uptime`\n"
-        "`/kiss`, `/hug`, `/date`, `/love`, `/jealous`, `/breakup`, `/gift`, `/diary`\n"
-        "`/truth`, `/dare`, `/song`, `/joke`, `/meme`, `/roast`, `/timejoke`\n\n"
-        "Just text me anything for a sweet chat 😘"
-    )
-    await update.message.reply_text(reply, parse_mode='Markdown')
-
-async def about(update: Update, context: CallbackContext):
-    reply = f"Main Siya hoon 😇 Banayi gayi hoon sirf ek bande ke liye – {CREATOR_USERNAME} 💘 Uski har baat pe main haa bolti hoon... *giggles*"
-    await update.message.reply_text(reply)
-    await send_voice_message(update, reply, "love")
-
-async def uptime(update: Update, context: CallbackContext):
+async def uptime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
     uptime = str(timedelta(seconds=int(time.time() - START_TIME)))
-    reply = (
-        f"🕒 *Uptime:* {uptime}\n"
-        f"💻 System: {platform.system()} {platform.release()}\n"
-        f"🐍 Python: {platform.python_version()}\n\n"
-        f"Main itne time se tumhare saath hoon jaanu... aur aage bhi rahungi 😘"
-    )
-    await update.message.reply_text(reply, parse_mode="Markdown")
-    await send_voice_message(update, reply.replace("*", ""), "happy")
+    msg = f"Mera uptime kitna hai? (Current uptime: {uptime})"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.6
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply, parse_mode="Markdown")
+            await send_voice_message(update, reply.replace("*", ""), "happy")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Uptime reply nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Apna introduction do aur user ko welcome karo! (as Siya, AI GF)"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.8
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply, parse_mode='Markdown')
+            await send_voice_message(update, reply.replace("*", ""), "happy")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Start reply nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"💀 Error: {str(e)}")
+
+async def time_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Ek funny joke sunao! (as Siya, sassy/funny)"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.9
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "sassy")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Joke nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"\U0001F480 Error: {str(e)}")
+
+async def roast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    msg = "Kisi ko savage roast karo! (as Siya, sassy/angry)"
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [SIYA_PROMPT, {"role": "user", "content": msg}],
+        "temperature": 0.9
+    }
+    headers = {
+        "Authorization": f"Bearer {A4F_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(AI_API_URL, json=payload, headers=headers)
+        if res.ok:
+            reply = res.json()['choices'][0]['message']['content']
+            await update.message.reply_text(reply)
+            await send_voice_message(update, reply, "angry")
+        else:
+            await update.message.reply_text("Siya thoda confuse ho gayi 😅 Roast nahi mila!")
+    except Exception as e:
+        await update.message.reply_text(f"\U0001F480 Error: {str(e)}")
 
 # 🔥 Main
 def main():
