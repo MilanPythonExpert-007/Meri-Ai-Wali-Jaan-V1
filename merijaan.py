@@ -28,7 +28,7 @@ from pydub import AudioSegment
 import numpy as np
 
 # ✅ Config
-BOT_TOKEN = "7707351015:AAFc7aLstsE18bBJbaVynt0as-eqE0tH2Fw"
+BOT_TOKEN = "7604799948:AAHm8KhXMKrsanAZOtBi9t8l4sEZ5eU2CEc"
 A4F_API_KEY = "ddc-a4f-9d06c9a8b0ad4098959c676b16336dac"
 MODEL_NAME = "provider-5/chatgpt-4o-latest"
 AI_API_URL = "https://api.a4f.co/v1/chat/completions"
