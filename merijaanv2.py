@@ -29,7 +29,7 @@ import numpy as np
 # ✅ Config
 BOT_TOKEN = "8534779797:AAFOBX-58ui4eANUMIMIdb0WnaeBW0vYDwM"
 A4F_API_KEY = "ddc-a4f-9d06c9a8b0ad4098959c676b16336dac"
-MODEL_NAME = "provider-6/gpt-4o"
+MODEL_NAME = "provider-5/gpt-4o-mini"
 AI_API_URL = "https://api.a4f.co/v1/chat/completions"
 CREATOR_USERNAME = "@Harsh_ESC"
 ADMIN_ID = 7916364095
